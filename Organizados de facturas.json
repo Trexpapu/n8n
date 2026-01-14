@@ -1,0 +1,330 @@
+{
+  "name": "Organizados de facturas",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Facturas",
+        "formDescription": "Coloca tu nombre y factura",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nombre",
+              "placeholder": "Ingresa tu nombre",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Factura",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5a219dcd-fcc6-4bdb-bb9a-3a228152c17c",
+      "name": "On form submission",
+      "webhookId": "ccedbd29-06bf-463c-9e16-a8d7a14aad32"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Factura",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "cc671312-93d3-45d1-8867-9f80b6a503da",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Del texto de la factura contenido en {{ $json.text }}, extrae la información y devuélvela\nEXCLUSIVAMENTE en un JSON válido que cumpla estrictamente con el esquema definido.\n\nReglas obligatorias:\n- No incluyas texto adicional ni explicaciones.\n- No uses tablas ni formato Markdown.\n- Usa únicamente JSON válido.\n- Todos los valores monetarios deben ser números.\n- La fecha es la misma para todos los productos.\n- La cantidad de producto se encuentra despues de la descripción y son números enteros.\n- Los valores que no se encuentren deben asignarse con el valor 0.\n- Los decimales que terminen en 0 deben conservarlo, por ejemplo: 2.80.\n\n\n\n- Extrae la fecha de factura\n- Descripción del producto  \n- Cantidad de producto\n- Unidad de medida  \n- Valor unitario  \n- Subtotal o importe \n- Importe del IVA \n- Total  \n\n",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0b3e1ca6-5890-42a1-b97c-6594d841e0fd",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        208
+      ],
+      "id": "da9cb756-f573-4920-840d-c6cd879fb3da",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "UjKQMoJ0D6TD9aKD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.productos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        768,
+        0
+      ],
+      "id": "d05430e6-a629-414b-bdd4-acfa3c26a680",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10HBWxqAsn1ArV-bgn8_4rFyBjtSIo9VPyLX9SOQPMkw",
+          "mode": "list",
+          "cachedResultName": "Facturas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10HBWxqAsn1ArV-bgn8_4rFyBjtSIo9VPyLX9SOQPMkw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Facturas2026",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10HBWxqAsn1ArV-bgn8_4rFyBjtSIo9VPyLX9SOQPMkw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $('Basic LLM Chain').item.json.output.fecha }}",
+            "Cantidad": "={{ $json.cantidad }}",
+            "SubTotal": "={{ $json.subtotal }}",
+            "Producto": "={{ $json.descripcion_del_producto }}",
+            "Unidad de medida": "={{ $json.unidad }}",
+            "Valor unitario": "={{ $json.valor_unitario }}",
+            "IVA": "={{ $json.importe_iva }}",
+            "Total": "={{ $json.total }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Producto",
+              "displayName": "Producto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cantidad",
+              "displayName": "Cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Unidad de medida",
+              "displayName": "Unidad de medida",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Valor unitario",
+              "displayName": "Valor unitario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SubTotal",
+              "displayName": "SubTotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "IVA",
+              "displayName": "IVA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        0
+      ],
+      "id": "afa5be4a-9a65-422f-a6e8-7a08e18dbbdb",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9R4LGTlYGsLvxgS0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"fecha\": {\n      \"type\": \"string\",\n      \"description\": \"Fecha de la factura en formato YYYY-MM-DD\"\n    },\n    \"productos\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"descripcion_del_producto\": {\n            \"type\": \"string\",\n            \"description\": \"Descripción comercial del producto\"\n          },\n          \"cantidad\": {\n            \"type\": \"number\",\n            \"description\": \"Cantidad del producto (10, 15, 20)\"\n          },\n          \"unidad\": {\n            \"type\": \"string\",\n            \"description\": \"Unidad de medida (Caja, Saco, Pieza, etc.)\"\n          },\n          \"valor_unitario\": {\n            \"type\": \"number\",\n            \"description\": \"Precio unitario del producto\"\n          },\n          \"subtotal\": {\n            \"type\": \"number\",\n            \"description\": \"Importe antes de impuestos\"\n          },\n          \"importe_iva\": {\n            \"type\": \"number\",\n            \"description\": \"Monto de IVA aplicado al producto\"\n          },\n          \"total\": {\n            \"type\": \"number\",\n            \"description\": \"Importe total con impuestos incluidos\"\n          }\n        },\n        \"required\": [\n          \"descripcion_del_producto\",\n          \"cantidad\",\n          \"unidad\",\n          \"valor_unitario\",\n          \"subtotal\",\n          \"importe_iva\",\n          \"total\"\n        ],\n        \"additionalProperties\": false\n      }\n    }\n  },\n  \"required\": [\"fecha\", \"productos\"],\n  \"additionalProperties\": false\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        208
+      ],
+      "id": "9697433e-a777-4d68-bd48-15ac9f24b2c1",
+      "name": "Structured Output Parser"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9f2fa3d3-6b60-41a0-89d2-703a5eda8d2f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a770ccb3a6ffef522de6cf935aa84c834a3757e322f15df858463c95f73967c5"
+  },
+  "id": "e2uLZ26yyVHvbFgw",
+  "tags": []
+}
